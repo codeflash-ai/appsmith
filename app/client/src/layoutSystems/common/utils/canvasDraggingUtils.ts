@@ -215,10 +215,11 @@ export const getBoundUpdateRelativeRowsMethod = (
 ) => {
   return (drawingBlocks: WidgetDraggingBlock[], rows: number) => {
     if (drawingBlocks.length) {
-      const sortedByTopBlocks = drawingBlocks.sort(
+      // keep the original in-place sort to preserve mutation behavior
+      drawingBlocks.sort(
         (each1, each2) => each2.top + each2.height - (each1.top + each1.height),
       );
-      const bottomMostBlock = sortedByTopBlocks[0];
+      const bottomMostBlock = drawingBlocks[0];
       const [, top] = getDropZoneOffsets(
         snapColumnSpace,
         snapRowSpace,
@@ -228,7 +229,12 @@ export const getBoundUpdateRelativeRowsMethod = (
         } as XYCord,
         { x: 0, y: 0 },
       );
-      const widgetIdsToExclude = drawingBlocks.map((a) => a.widgetId);
+
+      const len = drawingBlocks.length;
+      const widgetIdsToExclude = new Array<string>(len);
+      for (let i = 0; i < len; i++) {
+        widgetIdsToExclude[i] = drawingBlocks[i].widgetId;
+      }
 
       return updateBottomRow(
         top,
