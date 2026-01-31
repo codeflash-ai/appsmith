@@ -13,11 +13,12 @@ export const createReducer = (
   // TODO: Fix this the next time the file is edited
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function reducer(state = initialState, action: ReduxAction<any>) {
-    if (handlers.hasOwnProperty(action.type)) {
-      return handlers[action.type](state, action);
-    } else {
-      return state;
+    const type = action.type;
+    if ((handlers as any).hasOwnProperty(type)) {
+      const handler = (handlers as any)[type];
+      return handler(state, action);
     }
+    return state;
   };
 };
 
