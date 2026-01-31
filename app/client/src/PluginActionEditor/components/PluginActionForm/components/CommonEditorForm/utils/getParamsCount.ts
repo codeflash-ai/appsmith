@@ -5,10 +5,25 @@ function getParamsCount(
   actionParams?: Property[],
   datasourceParams?: Property[],
 ) {
-  const validActionParams = getValidProperties(actionParams);
-  const validDatasourceParams = getValidProperties(datasourceParams);
+  let count = 0;
 
-  return validActionParams.length + validDatasourceParams.length;
+  if (Array.isArray(actionParams)) {
+    for (let i = 0; i < actionParams.length; i++) {
+      if (actionParams[i].key && actionParams[i].key !== "") {
+        count++;
+      }
+    }
+  }
+
+  if (Array.isArray(datasourceParams)) {
+    for (let i = 0; i < datasourceParams.length; i++) {
+      if (datasourceParams[i].key && datasourceParams[i].key !== "") {
+        count++;
+      }
+    }
+  }
+
+  return count;
 }
 
 export default getParamsCount;
