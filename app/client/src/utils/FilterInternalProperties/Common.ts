@@ -1,9 +1,15 @@
 import _ from "lodash";
+const TERN_FUNCTION_PATTERN = /^fn\((?:[\w,: \(\)->])*\) -> [\w]*$/;
+
 
 // TODO: Fix this the next time the file is edited
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isTernFunctionDef = (data: any) =>
-  typeof data === "string" && /^fn\((?:[\w,: \(\)->])*\) -> [\w]*$/.test(data);
+  {
+      // Early return for non-string types to avoid regex execution
+      if (typeof data !== "string") return false;
+      return TERN_FUNCTION_PATTERN.test(data);
+    };
 
 export const createObjectPeekData = (
   // TODO: Fix this the next time the file is edited
