@@ -11,16 +11,14 @@ export const generateDragStateForAnvilLayout = ({
 }: {
   layoutId: string;
   widgetType: WidgetType;
-}): SetDraggingStateActionPayload => {
-  return {
-    isDragging: true,
-    dragGroupActualParent: layoutId || "",
-    draggingGroupCenter: {
-      widgetType,
-    },
-    draggedOn: layoutId,
-  };
-};
+}): SetDraggingStateActionPayload => ({
+  isDragging: true,
+  dragGroupActualParent: layoutId || "",
+  draggingGroupCenter: {
+    widgetType,
+  },
+  draggedOn: layoutId,
+});
 
 export const getWidgetSizeConfiguration = (
   type: string,
