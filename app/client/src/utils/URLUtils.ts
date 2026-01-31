@@ -2,14 +2,14 @@ import _ from "lodash";
 
 export function getQueryParams() {
   const urlParams = new URLSearchParams(window.location.search);
-  const keys = urlParams.keys();
-  let key = keys.next().value;
   const queryParams: Record<string, string> = {};
+  const hasOwnProp = Object.prototype.hasOwnProperty;
 
-  while (key) {
-    queryParams[key] = urlParams.get(key) as string;
-    key = keys.next().value;
-  }
+  urlParams.forEach((value, key) => {
+    if (!hasOwnProp.call(queryParams, key)) {
+      queryParams[key] = value;
+    }
+  });
 
   return queryParams;
 }
