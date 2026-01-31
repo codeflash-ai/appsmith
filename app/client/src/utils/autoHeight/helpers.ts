@@ -1,4 +1,14 @@
 import type { TreeNode } from "./constants";
+interface TreeNode {
+  aboves: string[];
+  belows: string[];
+  topRow: number;
+  bottomRow: number;
+  originalTopRow: number;
+  originalBottomRow: number;
+  distanceToNearestAbove: number;
+}
+
 
 /**
  * Gets the nearest above box for the current box. Including the aboves which have changes so far.
@@ -20,17 +30,21 @@ export function getNearestAbove(
   return aboves.reduce((prev: string[], next: string) => {
     if (!prev[0]) return [next];
 
+    // Cache tree and repositionedBoxes lookups
+    const nextRepositioned = repositionedBoxes[next];
+    const prevRepositioned = repositionedBoxes[prev[0]];
+
     // Get the bottomRow of the above box
     let nextBottomRow = tree[next].bottomRow;
     let prevBottomRow = tree[prev[0]].bottomRow;
 
     // If we've already repositioned this, use the new bottomRow of the box
-    if (repositionedBoxes[next]) {
-      nextBottomRow = repositionedBoxes[next].bottomRow;
+    if (nextRepositioned) {
+      nextBottomRow = nextRepositioned.bottomRow;
     }
 
-    if (repositionedBoxes[prev[0]]) {
-      prevBottomRow = repositionedBoxes[prev[0]].bottomRow;
+    if (prevRepositioned) {
+      prevBottomRow = prevRepositioned.bottomRow;
     }
 
     // If the current box's (next) bottomRow is larger than the previous
@@ -40,16 +54,15 @@ export function getNearestAbove(
     // We have two bottom most boxes
     else if (nextBottomRow === prevBottomRow) {
       if (
-        repositionedBoxes[prev[0]] &&
-        repositionedBoxes[prev[0]].bottomRow ===
-          repositionedBoxes[prev[0]].topRow
+        prevRepositioned &&
+        prevRepositioned.bottomRow === prevRepositioned.topRow
       ) {
         return prev;
       }
 
       if (
-        repositionedBoxes[next] &&
-        repositionedBoxes[next].bottomRow === repositionedBoxes[next].topRow
+        nextRepositioned &&
+        nextRepositioned.bottomRow === nextRepositioned.topRow
       ) {
         return [next];
       }
