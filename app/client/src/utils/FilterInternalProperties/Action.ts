@@ -12,16 +12,28 @@ export const getActionChildrenPeekData = (
     const definitions = entityDefinitions.ACTION(dataTreeAction, {});
     const peekData: Record<string, unknown> = {};
 
-    Object.keys(definitions).forEach((key) => {
-      if (key.indexOf("!") === -1) {
-        if (key === "data" || key === "isLoading" || key === "responseMeta") {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const EMPTY_FN = function () {}; // eslint-disable-next-line @typescript-eslint/no-empty-function
+
+    const keys = Object.keys(definitions);
+    for (let i = 0, len = keys.length; i < len; i++) {
+      const key = keys[i];
+      if (key.indexOf("!") !== -1) continue;
+
+      switch (key) {
+        case "data":
+        case "isLoading":
+        case "responseMeta":
           peekData[key] = dataTreeAction[key];
-        } else if (key === "run" || key === "clear") {
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-          peekData[key] = function () {}; // tern inference required here
-        }
+          break;
+        case "run":
+        case "clear":
+          peekData[key] = EMPTY_FN; // tern inference required here
+          break;
+        default:
+          break;
       }
-    });
+    }
 
     return { peekData };
   }
