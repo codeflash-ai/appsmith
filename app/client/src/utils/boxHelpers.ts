@@ -6,10 +6,17 @@ export interface Rect {
 }
 
 export const areIntersecting = (r1: Rect, r2: Rect) => {
-  return !(
-    r2.left >= r1.right ||
-    r2.right <= r1.left ||
-    r2.top >= r1.bottom ||
-    r2.bottom <= r1.top
-  );
+  const l1 = r1.left;
+  const r1r = r1.right;
+  const t1 = r1.top;
+  const b1 = r1.bottom;
+
+  const l2 = r2.left;
+  const r2r = r2.right;
+  const t2 = r2.top;
+  const b2 = r2.bottom;
+
+  // If any separating axis exists, they do not intersect.
+  if (l2 >= r1r || r2r <= l1 || t2 >= b1 || b2 <= t1) return false;
+  return true;
 };
