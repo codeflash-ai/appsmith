@@ -107,9 +107,12 @@ export const getDynamicBindings = (
   // Get the "binding" path values
   const jsSnippets = stringSegments.map((segment) => {
     const length = segment.length;
-    const matches = isDynamicValue(segment);
-
-    if (matches) {
+    // Fast path: check for {{ and }} pattern without regex
+    if (length >= 4 && 
+        segment.charCodeAt(0) === 123 && 
+        segment.charCodeAt(1) === 123 && 
+        segment.charCodeAt(length - 1) === 125 && 
+        segment.charCodeAt(length - 2) === 125) {
       return segment.substring(2, length - 2);
     }
 
