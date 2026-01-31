@@ -7,6 +7,10 @@ import {
   getComplementaryGrayscaleColor,
   isLightColor,
 } from "widgets/WidgetUtils";
+const resultCache: Map<string, string> = new Map();
+const isLightCache: Map<string, boolean> = new Map();
+const hoverCache: Map<string, string> = new Map();
+
 
 // Menu Item Background Color - Active
 export const getMenuItemBackgroundColorWhenActive = (
@@ -14,23 +18,45 @@ export const getMenuItemBackgroundColorWhenActive = (
   navColorStyle: NavigationSetting["colorStyle"] = NAVIGATION_SETTINGS
     .COLOR_STYLE.LIGHT,
 ) => {
-  const colorHsl = tinycolor(color).toHsl();
+  const cacheKey = `${color}|${navColorStyle}`;
+  const cached = resultCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
 
   switch (navColorStyle) {
     case NAVIGATION_SETTINGS.COLOR_STYLE.LIGHT: {
-      if (isLightColor(color)) {
-        colorHsl.l -= 0.1;
+      // Cache isLightColor per color to avoid repeated expensive checks.
+      let light = isLightCache.get(color);
+      if (light === undefined) {
+        light = isLightColor(color);
+        isLightCache.set(color, light);
+      }
 
-        return tinycolor(colorHsl).toHexString();
+      if (light) {
+        const colorHsl = tinycolor(color).toHsl();
+        colorHsl.l -= 0.1;
+        const res = tinycolor(colorHsl).toHexString();
+        resultCache.set(cacheKey, res);
+        return res;
       } else {
+        const colorHsl = tinycolor(color).toHsl();
         colorHsl.l += 0.35;
         colorHsl.a = 0.3;
-
-        return tinycolor(colorHsl).toHex8String();
+        const res = tinycolor(colorHsl).toHex8String();
+        resultCache.set(cacheKey, res);
+        return res;
       }
     }
     case NAVIGATION_SETTINGS.COLOR_STYLE.THEME: {
-      return calculateHoverColor(color);
+      // Cache calculateHoverColor per color
+      let hover = hoverCache.get(color);
+      if (hover === undefined) {
+        hover = calculateHoverColor(color);
+        hoverCache.set(color, hover);
+      }
+      resultCache.set(cacheKey, hover);
+      return hover;
     }
   }
 };
