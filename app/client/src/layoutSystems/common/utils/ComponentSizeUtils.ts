@@ -30,28 +30,25 @@ export const getAutoLayoutComponentDimensions = ({
   rightColumn,
   topRow,
 }: BaseWidgetProps) => {
-  let left = leftColumn;
-  let right = rightColumn;
-  let top = topRow;
-  let bottom = bottomRow;
+  const left =
+    isMobile && mobileLeftColumn !== undefined && parentColumnSpace !== 1
+      ? mobileLeftColumn
+      : leftColumn;
 
-  if (isMobile) {
-    if (mobileLeftColumn !== undefined && parentColumnSpace !== 1) {
-      left = mobileLeftColumn;
-    }
+  const right =
+    isMobile && mobileRightColumn !== undefined && parentColumnSpace !== 1
+      ? mobileRightColumn
+      : rightColumn;
 
-    if (mobileRightColumn !== undefined && parentColumnSpace !== 1) {
-      right = mobileRightColumn;
-    }
+  const top =
+    isMobile && mobileTopRow !== undefined && parentRowSpace !== 1
+      ? mobileTopRow
+      : topRow;
 
-    if (mobileTopRow !== undefined && parentRowSpace !== 1) {
-      top = mobileTopRow;
-    }
-
-    if (mobileBottomRow !== undefined && parentRowSpace !== 1) {
-      bottom = mobileBottomRow;
-    }
-  }
+  const bottom =
+    isMobile && mobileBottomRow !== undefined && parentRowSpace !== 1
+      ? mobileBottomRow
+      : bottomRow;
 
   return {
     componentWidth: (right - left) * parentColumnSpace,
