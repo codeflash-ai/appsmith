@@ -34,12 +34,18 @@ export const getCanvasStructureFromDSL = (dsl: DSL): CanvasStructure => {
   // Todo(abhinav): abstraction leak
   if (dsl.type === "TABS_WIDGET") {
     if (children && children.length > 0) {
-      structureChildren = children.map((childTab) => ({
-        widgetName: childTab.tabName,
-        widgetId: childTab.widgetId,
-        type: "TABS_WIDGET",
-        children: childTab.children,
-      }));
+      const len = children.length;
+      const out = new Array<CanvasStructure>(len);
+      for (let i = 0; i < len; i++) {
+        const childTab = children[i];
+        out[i] = {
+          widgetName: childTab.tabName,
+          widgetId: childTab.widgetId,
+          type: "TABS_WIDGET",
+          children: childTab.children,
+        };
+      }
+      structureChildren = out;
     }
   } else if (children && children.length === 1) {
     if (children[0].type === "CANVAS_WIDGET") {
@@ -47,13 +53,29 @@ export const getCanvasStructureFromDSL = (dsl: DSL): CanvasStructure => {
     }
   }
 
+  let mappedChildren: CanvasStructure[] | undefined;
+  if (structureChildren) {
+    mappedChildren = structureChildren;
+  } else if (children) {
+    const len = children.length;
+    // Only allocate a result array when there are truthy children
+    const temp: CanvasStructure[] = [];
+    for (let i = 0; i < len; i++) {
+      const ch = children[i];
+      if (ch) {
+        temp.push(getCanvasStructureFromDSL(ch));
+      }
+    }
+    mappedChildren = temp;
+  } else {
+    mappedChildren = undefined;
+  }
+
   return {
     widgetId: dsl.widgetId,
     widgetName: dsl.widgetName,
     type: dsl.type,
-    children:
-      structureChildren ||
-      children?.filter(Boolean).map(getCanvasStructureFromDSL),
+    children: mappedChildren,
   };
 };
 
