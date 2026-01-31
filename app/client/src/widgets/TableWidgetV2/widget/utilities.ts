@@ -127,11 +127,10 @@ export const getSelectRowIndices = (
 
 //TODO(Balaji): we shouldn't replace special characters
 export const removeSpecialChars = (value: string, limit?: number) => {
-  const separatorRegex = /\W+/;
+  const separatorRegex = /\W+/g;
 
   return value
-    .split(separatorRegex)
-    .join("_")
+    .replace(separatorRegex, "_")
     .slice(0, limit || 30);
 };
 
