@@ -40,15 +40,14 @@ export type DiffWithNewTreeState = Diff<DataTree, DataTree> | DiffNewTreeState;
 // Note: This "can" fail if the object entries don't have their properties in the
 // same order.
 export const findDuplicateIndex = (arr: Array<unknown>) => {
-  const _uniqSet = new Set();
-  let currSetSize = 0;
+  const _uniqSet = new Set<string | undefined>();
+  const stringify = JSON.stringify;
 
-  for (let i = 0; i < arr.length; i++) {
+  for (let i = 0, len = arr.length; i < len; ++i) {
     // JSON.stringify because value can be objects
-    _uniqSet.add(JSON.stringify(arr[i]));
-
-    if (_uniqSet.size > currSetSize) currSetSize = _uniqSet.size;
-    else return i;
+    const key = stringify(arr[i] as any);
+    if (_uniqSet.has(key as any)) return i;
+    _uniqSet.add(key as any);
   }
 
   return -1;
