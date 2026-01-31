@@ -382,19 +382,22 @@ export const nextAvailableRowInContainer = (
   parentContainerId: string,
   canvasWidgets: { [widgetId: string]: FlattenedWidgetProps },
 ) => {
-  const filteredCanvasWidgets = omitBy(canvasWidgets, (widget) => {
-    return widget.type === "MODAL_WIDGET";
-  });
-
-  return (
-    Object.values(filteredCanvasWidgets).reduce(
-      // TODO: Fix this the next time the file is edited
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (prev: number, next: any) =>
-        next?.parentId === parentContainerId && next.bottomRow > prev
-          ? next.bottomRow
-          : prev,
-      0,
-    ) + 1
-  );
+  let maxBottomRow = 0;
+  
+  // Iterate directly over values without creating intermediate filtered object
+  for (const widgetId in canvasWidgets) {
+    const widget = canvasWidgets[widgetId];
+    
+    // Skip modal widgets and widgets with different parentId
+    if (widget.type === "MODAL_WIDGET" || widget.parentId !== parentContainerId) {
+      continue;
+    }
+    
+    // Track maximum bottomRow
+    if (widget.bottomRow > maxBottomRow) {
+      maxBottomRow = widget.bottomRow;
+    }
+  }
+  
+  return maxBottomRow + 1;
 };
