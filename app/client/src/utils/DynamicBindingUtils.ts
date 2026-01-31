@@ -683,8 +683,11 @@ export function getEntityName(
 export function getDifferences<T>(a: Set<T>, b: Set<T>): T[] {
   const diff: T[] = [];
 
+  // Cache the has method bound to `b` to avoid repeated property lookups.
+  const bHas = b.has.bind(b);
+
   for (const val of a) {
-    if (!b.has(val)) diff.push(val);
+    if (!bHas(val)) diff.push(val);
   }
 
   return diff;
