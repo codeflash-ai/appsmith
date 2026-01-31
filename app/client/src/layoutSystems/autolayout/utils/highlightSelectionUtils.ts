@@ -29,19 +29,25 @@ export const getHighlightPayload = (
   /**
    * Filter highlights that  span the current mouse position.
    */
-  let filteredHighlights: HighlightInfo[] = [];
+  const filteredHighlights = getViableDropPositions(highlights, pos);
 
-  filteredHighlights = getViableDropPositions(highlights, pos);
+  if (!filteredHighlights || !filteredHighlights.length) return;
 
-  if (!filteredHighlights || !filteredHighlights?.length) return;
-
-  // Sort filtered highlights in ascending order of distance from mouse position.
-  const arr = [...filteredHighlights]?.sort((a, b) => {
-    return calculateDistance(a, pos) - calculateDistance(b, pos);
-  });
+  // Find the closest highlight without creating a sorted array.
+  let minDistance = Infinity;
+  let closest = filteredHighlights[0];
+  
+  for (let i = 0, len = filteredHighlights.length; i < len; i++) {
+    const highlight = filteredHighlights[i];
+    const distance = calculateDistance(highlight, pos);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closest = highlight;
+    }
+  }
 
   // Return the closest highlight.
-  return arr[0];
+  return closest;
 };
 
 /**
@@ -57,47 +63,60 @@ function getViableDropPositions(
   if (!arr) return arr || [];
 
   const DEFAULT_DROP_RANGE = 10;
-  const verticalHighlights = arr.filter(
-    (highlight: HighlightInfo) => highlight.isVertical,
-  );
-  const horizontalHighlights = arr.filter(
-    (highlight: HighlightInfo) => !highlight.isVertical,
-  );
   const selection: HighlightInfo[] = [];
+  const posX = pos.x;
+  const posY = pos.y;
 
-  verticalHighlights.forEach((highlight: HighlightInfo) => {
-    if (pos.y >= highlight.posY && pos.y <= highlight.posY + highlight.height)
-      if (
-        (pos.x >= highlight.posX &&
-          pos.x <=
-            highlight.posX +
-              (highlight.dropZone?.right || DEFAULT_DROP_RANGE)) ||
-        (pos.x < highlight.posX &&
-          pos.x >=
-            highlight.posX - (highlight.dropZone?.left || DEFAULT_DROP_RANGE))
-      )
-        selection.push(highlight);
-  });
+  // Single pass through all highlights, checking vertical and horizontal conditions
+  for (let i = 0, len = arr.length; i < len; i++) {
+    const highlight = arr[i];
+    
+    if (highlight.isVertical) {
+      const highlightPosY = highlight.posY;
+      const highlightPosX = highlight.posX;
+      
+      if (posY >= highlightPosY && posY <= highlightPosY + highlight.height) {
+        const rightBound = highlightPosX + (highlight.dropZone?.right || DEFAULT_DROP_RANGE);
+        const leftBound = highlightPosX - (highlight.dropZone?.left || DEFAULT_DROP_RANGE);
+        
+        if ((posX >= highlightPosX && posX <= rightBound) ||
+            (posX < highlightPosX && posX >= leftBound)) {
+          selection.push(highlight);
+        }
+      }
+    }
+  }
+  
   const hasVerticalSelection = selection.length > 0;
+  const verticalMultiplier = hasVerticalSelection ? 0.2 : 1;
+  const topMultiplier = hasVerticalSelection ? 0.3 : 1;
 
-  horizontalHighlights.forEach((highlight: HighlightInfo) => {
-    if (pos.x >= highlight.posX && pos.x <= highlight.posX + highlight.width)
-      if (
-        (pos.y >= highlight.posY &&
-          pos.y <=
-            highlight.posY +
-              (highlight.dropZone?.bottom !== undefined
-                ? highlight.dropZone?.bottom * (hasVerticalSelection ? 0.2 : 1)
-                : DEFAULT_DROP_RANGE)) ||
-        (pos.y < highlight.posY &&
-          pos.y >=
-            highlight.posY -
-              (highlight.dropZone?.top !== undefined
-                ? highlight.dropZone?.top * (hasVerticalSelection ? 0.3 : 1)
-                : DEFAULT_DROP_RANGE))
-      )
-        selection.push(highlight);
-  });
+  // Second pass for horizontal highlights
+  for (let i = 0, len = arr.length; i < len; i++) {
+    const highlight = arr[i];
+    
+    if (!highlight.isVertical) {
+      const highlightPosX = highlight.posX;
+      const highlightPosY = highlight.posY;
+      
+      if (posX >= highlightPosX && posX <= highlightPosX + highlight.width) {
+        const bottomRange = highlight.dropZone?.bottom !== undefined
+          ? highlight.dropZone.bottom * verticalMultiplier
+          : DEFAULT_DROP_RANGE;
+        const topRange = highlight.dropZone?.top !== undefined
+          ? highlight.dropZone.top * topMultiplier
+          : DEFAULT_DROP_RANGE;
+        
+        const bottomBound = highlightPosY + bottomRange;
+        const topBound = highlightPosY - topRange;
+        
+        if ((posY >= highlightPosY && posY <= bottomBound) ||
+            (posY < highlightPosY && posY >= topBound)) {
+          selection.push(highlight);
+        }
+      }
+    }
+  }
 
   return selection;
 }
