@@ -14,6 +14,8 @@ import type { DataTreeEntityConfig } from "ee/entities/DataTree/types";
 import type { DataTreeEntity } from "entities/DataTree/dataTreeTypes";
 import { getType, Types } from "./TypeHelpers";
 import { ViewTypes } from "components/formControls/utils";
+const ENTITY_ID_CACHE = new WeakMap<object, string | undefined>();
+
 
 export type DependencyMap = Record<string, Array<string>>;
 // TODO: Fix this the next time the file is edited
@@ -49,16 +51,14 @@ export function getDynamicStringSegments(dynamicString: string): string[] {
   const firstString = dynamicString.substring(0, indexOfDoubleParanStart);
 
   firstString && stringSegments.push(firstString);
-  let rest = dynamicString.substring(
-    indexOfDoubleParanStart,
-    dynamicString.length,
-  );
+  
   //{{}}{{}}}
   let sum = 0;
+  let segmentStart = indexOfDoubleParanStart;
 
-  for (let i = 0; i <= rest.length - 1; i++) {
-    const char = rest[i];
-    const prevChar = rest[i - 1];
+  for (let i = indexOfDoubleParanStart; i < dynamicString.length; i++) {
+    const char = dynamicString[i];
+    const prevChar = i > 0 ? dynamicString[i - 1] : "";
 
     if (char === "{") {
       sum++;
@@ -66,14 +66,24 @@ export function getDynamicStringSegments(dynamicString: string): string[] {
       sum--;
 
       if (prevChar === "}" && sum === 0) {
-        stringSegments.push(rest.substring(0, i + 1));
-        rest = rest.substring(i + 1, rest.length);
-
-        if (rest) {
-          stringSegments = stringSegments.concat(
-            getDynamicStringSegments(rest),
-          );
-          break;
+        stringSegments.push(dynamicString.substring(segmentStart, i + 1));
+        
+        // Check if there's more content after this segment
+        if (i + 1 < dynamicString.length) {
+          const nextSegmentStart = dynamicString.indexOf("{{", i + 1);
+          
+          if (nextSegmentStart === -1) {
+            // No more dynamic segments, push remaining as plain text
+            stringSegments.push(dynamicString.substring(i + 1));
+            break;
+          } else {
+            // Push plain text before next dynamic segment
+            if (nextSegmentStart > i + 1) {
+              stringSegments.push(dynamicString.substring(i + 1, nextSegmentStart));
+            }
+            segmentStart = nextSegmentStart;
+            i = nextSegmentStart - 1; // -1 because loop will increment
+          }
         }
       }
     }
@@ -327,12 +337,9 @@ export const isChildPropertyPathStartsWithParent = (
   }
 
   // Most common case: dot notation
-  if (childPropertyPath[parentLength] === ".") {
-    return childPropertyPath.startsWith(parentPropertyPath);
-  }
-
-  // Less common case: bracket notation
-  if (childPropertyPath[parentLength] === "[") {
+  const ch = childPropertyPath.charCodeAt(parentLength);
+  if (ch === 46 /* '.' */ || ch === 91 /* '[' */) {
+    // Check prefix match without allocating substring
     return childPropertyPath.startsWith(parentPropertyPath);
   }
 
@@ -658,10 +665,29 @@ export function getDynamicBindingsChangesSaga(
 }
 
 export function getEntityType(entity: DataTreeEntity) {
-  return "ENTITY_TYPE" in entity && entity.ENTITY_TYPE;
+  const has = "ENTITY_TYPE" in entity;
+  return has ? (entity as any).ENTITY_TYPE : false;
 }
 
 export function getEntityId(entity: DataTreeEntity) {
+  if (typeof entity === "object" && entity !== null) {
+    if (ENTITY_ID_CACHE.has(entity)) {
+      return ENTITY_ID_CACHE.get(entity);
+    }
+
+    let id: string | undefined;
+    if (isAction(entity)) {
+      id = entity.actionId;
+    } else if (isWidget(entity)) {
+      id = entity.widgetId;
+    } else if (isJSAction(entity)) {
+      id = entity.actionId;
+    }
+
+    ENTITY_ID_CACHE.set(entity, id);
+    return id;
+  }
+
   if (isAction(entity)) return entity.actionId;
 
   if (isWidget(entity)) return entity.widgetId;
@@ -683,8 +709,11 @@ export function getEntityName(
 export function getDifferences<T>(a: Set<T>, b: Set<T>): T[] {
   const diff: T[] = [];
 
+  // Cache the has method bound to `b` to avoid repeated property lookups.
+  const bHas = b.has.bind(b);
+
   for (const val of a) {
-    if (!b.has(val)) diff.push(val);
+    if (!bHas(val)) diff.push(val);
   }
 
   return diff;
