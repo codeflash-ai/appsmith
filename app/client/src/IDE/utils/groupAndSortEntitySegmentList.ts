@@ -9,20 +9,44 @@ export type EditorSegmentList<T> = Array<{
 export const groupAndSortEntitySegmentList = <T extends EntityItem>(
   items: T[],
 ): EditorSegmentList<T> => {
-  const groups = groupBy(items, (item) => {
-    if (item.group) return item.group;
+  // Group items in a single pass using Map for O(n) complexity
+  const groups = new Map<string, T[]>();
+  
+  for (let i = 0, len = items.length; i < len; i++) {
+    const item = items[i];
+    const groupKey = item.group || "NA";
+    const groupItems = groups.get(groupKey);
+    
+    if (groupItems) {
+      groupItems.push(item);
+    } else {
+      groups.set(groupKey, [item]);
+    }
+  }
 
-    return "NA";
-  });
+  // Convert to array and sort items within each group
+  const result: EditorSegmentList<T> = [];
+  
+  for (const [group, groupItems] of groups) {
+    // Sort items by title in-place
+    groupItems.sort((a, b) => {
+      const titleA = a.title;
+      const titleB = b.title;
+      return titleA < titleB ? -1 : titleA > titleB ? 1 : 0;
+    });
+    
+    result.push({
+      group,
+      items: groupItems,
+    });
+  }
 
   // Entity Segment Lists are sorted alphabetically at both group and item level
-  return sortBy(
-    Object.keys(groups).map((group) => {
-      return {
-        group: group,
-        items: sortBy(groups[group], "title"),
-      };
-    }),
-    "group",
-  );
+  result.sort((a, b) => {
+    const groupA = a.group;
+    const groupB = b.group;
+    return groupA < groupB ? -1 : groupA > groupB ? 1 : 0;
+  });
+
+  return result;
 };
