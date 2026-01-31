@@ -29,12 +29,16 @@ export const getWidgetSizeConfiguration = (
 ): SizeConfig => {
   const { widgetSize } = WidgetFactory.getWidgetAnvilConfig(type);
 
-  if (widgetSize && isFunction(widgetSize)) {
+  if (widgetSize && typeof widgetSize === "function") {
     return widgetSize(props, isPreviewMode);
   }
 
-  if (widgetSize && Object.keys(widgetSize).length) {
-    return widgetSize;
+  if (widgetSize) {
+    for (const k in widgetSize) {
+      if (Object.prototype.hasOwnProperty.call(widgetSize, k)) {
+        return widgetSize;
+      }
+    }
   }
 
   return {};
