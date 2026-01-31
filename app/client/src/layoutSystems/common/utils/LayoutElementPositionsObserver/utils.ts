@@ -31,7 +31,19 @@ export const getAnvilLayoutDOMId = (canvasId: string, layoutId: string) => {
  * @returns layoutId
  */
 export const extractLayoutIdFromLayoutDOMId = (layoutDOMId: string) => {
-  return layoutDOMId.split("_")[2];
+  // Find first underscore
+  const first = layoutDOMId.indexOf("_");
+  if (first === -1) return undefined;
+
+  // Find second underscore
+  const second = layoutDOMId.indexOf("_", first + 1);
+  if (second === -1) return undefined;
+
+  // Find third underscore, if any
+  const third = layoutDOMId.indexOf("_", second + 1);
+  return third === -1
+    ? layoutDOMId.substring(second + 1)
+    : layoutDOMId.substring(second + 1, third);
 };
 
 /**
