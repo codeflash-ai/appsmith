@@ -10,7 +10,7 @@ export const isOIDCEnabled = (featureFlags: FeatureFlags) => {
 };
 
 export const isSAMLEnabled = (featureFlags: FeatureFlags) => {
-  return featureFlags?.license_sso_saml_enabled;
+  return featureFlags ? featureFlags.license_sso_saml_enabled : undefined;
 };
 
 export const isGACEnabled = (featureFlags: FeatureFlags) => {
