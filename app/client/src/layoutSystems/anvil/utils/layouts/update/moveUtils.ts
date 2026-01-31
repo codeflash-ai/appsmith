@@ -54,35 +54,68 @@ export function severTiesFromParents(
 ): CanvasWidgetsReduxState {
   if (!movedWidgets?.length) return allWidgets;
 
+  // Use Set for O(1) lookup instead of array iteration
+  const movedWidgetsSet = new Set(movedWidgets);
   const widgets: CanvasWidgetsReduxState = { ...allWidgets };
+  
+  // Track which parents need updates to avoid redundant operations
+  const parentsToUpdate = new Map<string, Set<string>>();
 
   /**
    * Remove all moved widgets from their existing parent's children and layout.
    */
-  movedWidgets.forEach((widgetId: string) => {
-    // remove from previous parent
-    const prevParentId = widgets[widgetId]?.parentId;
+  for (let i = 0, len = movedWidgets.length; i < len; i++) {
+    const widgetId = movedWidgets[i];
+    const widget = widgets[widgetId];
+    
+    if (!widget) continue;
+    
+    const prevParentId = widget.parentId;
 
     if (prevParentId) {
-      const prevParent: FlattenedWidgetProps = Object.assign(
-        {},
-        widgets[prevParentId],
-      );
+      if (!parentsToUpdate.has(prevParentId)) {
+        parentsToUpdate.set(prevParentId, new Set());
+      }
+      parentsToUpdate.get(prevParentId)!.add(widgetId);
+    }
+  }
 
-      if (prevParent.children) {
-        const updatedPrevParent = {
-          ...prevParent,
-          children: prevParent.children.filter((each) => each !== widgetId),
-          layout: deleteWidgetFromPreset(
-            prevParent.layout,
-            widgetId,
-            widgets[widgetId].type,
-          ),
-        };
+  // Batch update parents
+  parentsToUpdate.forEach((widgetsToRemove, parentId) => {
+    const prevParent = widgets[parentId];
+    
+    if (!prevParent?.children) return;
 
-        widgets[prevParentId] = updatedPrevParent;
+    // Single-pass filter using Set lookup
+    const updatedChildren: string[] = [];
+    for (let i = 0, len = prevParent.children.length; i < len; i++) {
+      const childId = prevParent.children[i];
+      if (!widgetsToRemove.has(childId)) {
+        updatedChildren.push(childId);
       }
     }
+
+    // Only update if children actually changed
+    if (updatedChildren.length === prevParent.children.length) return;
+
+    // Build layout update efficiently
+    let updatedLayout = prevParent.layout;
+    widgetsToRemove.forEach((widgetId) => {
+      const widget = widgets[widgetId];
+      if (widget) {
+        updatedLayout = deleteWidgetFromPreset(
+          updatedLayout,
+          widgetId,
+          widget.type,
+        );
+      }
+    });
+
+    widgets[parentId] = {
+      ...prevParent,
+      children: updatedChildren,
+      layout: updatedLayout,
+    };
   });
 
   return widgets;

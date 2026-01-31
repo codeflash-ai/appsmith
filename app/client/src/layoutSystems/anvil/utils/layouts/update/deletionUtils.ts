@@ -11,13 +11,18 @@ export function deleteWidgetFromPreset(
 ): LayoutProps[] {
   if (!preset || !preset.length || !widgetId) return preset;
 
-  const updatedPreset: LayoutProps[] = preset.map((each: LayoutProps) => {
-    return (
-      deleteWidgetFromLayout(each, widgetId, widgetType) || ({} as LayoutProps)
-    );
-  });
+  // Pre-allocate array with known maximum size
+  const updatedPreset: LayoutProps[] = [];
+  
+  for (let i = 0, len = preset.length; i < len; i++) {
+    const result = deleteWidgetFromLayout(preset[i], widgetId, widgetType);
+    // Only add if result has a layout property
+    if (result && result.layout) {
+      updatedPreset.push(result);
+    }
+  }
 
-  return updatedPreset.filter((each: LayoutProps) => !!each.layout);
+  return updatedPreset;
 }
 
 /**
