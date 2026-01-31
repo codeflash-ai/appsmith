@@ -5,12 +5,23 @@ export const enhanceItemsTree = (
   items: CanvasStructure[],
   enhancer: (item: CanvasStructure) => EntityListTreeItem,
 ) => {
-  return items.map((child): EntityListTreeItem => {
-    return {
-      ...enhancer(child),
-      children: child.children
-        ? enhanceItemsTree(child.children, enhancer)
-        : undefined,
-    };
-  });
+  const length = items.length;
+  const result = new Array<EntityListTreeItem>(length);
+
+  for (let i = 0; i < length; i++) {
+    const child = items[i];
+    const enhanced = enhancer(child);
+
+    if (child.children) {
+      // Direct assignment avoids spread operator overhead
+      result[i] = {
+        ...enhanced,
+        children: enhanceItemsTree(child.children, enhancer),
+      };
+    } else {
+      result[i] = enhanced;
+    }
+  }
+
+  return result;
 };
