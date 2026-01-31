@@ -1,9 +1,8 @@
 import type { FeatureFlags } from "ee/entities/FeatureFlag";
 
 //if feature flag is true then return feature is enabled
-export const isBrandingEnabled = (featureFlags: FeatureFlags) => {
-  return featureFlags?.license_branding_enabled;
-};
+export const isBrandingEnabled = (featureFlags: FeatureFlags) =>
+  featureFlags?.license_branding_enabled;
 
 export const isOIDCEnabled = (featureFlags: FeatureFlags) => {
   return featureFlags?.license_sso_oidc_enabled;
