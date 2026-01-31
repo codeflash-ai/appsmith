@@ -49,38 +49,55 @@ export function getDynamicStringSegments(dynamicString: string): string[] {
   const firstString = dynamicString.substring(0, indexOfDoubleParanStart);
 
   firstString && stringSegments.push(firstString);
-  let rest = dynamicString.substring(
-    indexOfDoubleParanStart,
-    dynamicString.length,
-  );
   //{{}}{{}}}
   let sum = 0;
 
-  for (let i = 0; i <= rest.length - 1; i++) {
-    const char = rest[i];
-    const prevChar = rest[i - 1];
+  const len = dynamicString.length;
+  let inExpression = false;
+  let exprStart = indexOfDoubleParanStart;
+  let lastIndex = indexOfDoubleParanStart;
 
+  for (let i = indexOfDoubleParanStart; i < len; i++) {
+    const char = dynamicString[i];
+
+    if (!inExpression) {
+      // Look for the next expression start
+      if (char === "{" && i + 1 < len && dynamicString[i + 1] === "{") {
+        if (i > lastIndex) {
+          stringSegments.push(dynamicString.substring(lastIndex, i));
+        }
+        inExpression = true;
+        exprStart = i;
+        sum = 0;
+        // Count this '{'
+        sum++;
+        continue;
+      }
+      // not the start of an expression, continue scanning
+      continue;
+    }
+
+    // inExpression === true
     if (char === "{") {
       sum++;
     } else if (char === "}") {
       sum--;
-
+      const prevChar = dynamicString[i - 1];
       if (prevChar === "}" && sum === 0) {
-        stringSegments.push(rest.substring(0, i + 1));
-        rest = rest.substring(i + 1, rest.length);
-
-        if (rest) {
-          stringSegments = stringSegments.concat(
-            getDynamicStringSegments(rest),
-          );
-          break;
-        }
+        // close expression
+        stringSegments.push(dynamicString.substring(exprStart, i + 1));
+        inExpression = false;
+        lastIndex = i + 1;
       }
     }
   }
 
   if (sum !== 0 && dynamicString !== "") {
     return [dynamicString];
+  }
+
+  if (!inExpression && lastIndex < len) {
+    stringSegments.push(dynamicString.substring(lastIndex, len));
   }
 
   return stringSegments;
@@ -191,12 +208,8 @@ export interface EntityWithBindings {
 export const getEntityDynamicBindingPathList = (
   entity: EntityWithBindings,
 ): DynamicPath[] => {
-  if (
-    entity &&
-    entity.dynamicBindingPathList &&
-    Array.isArray(entity.dynamicBindingPathList)
-  ) {
-    return [...entity.dynamicBindingPathList];
+  if (entity && Array.isArray(entity.dynamicBindingPathList)) {
+    return entity.dynamicBindingPathList.slice();
   }
 
   return [];
