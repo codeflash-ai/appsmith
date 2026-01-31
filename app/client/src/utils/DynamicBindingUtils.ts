@@ -49,16 +49,14 @@ export function getDynamicStringSegments(dynamicString: string): string[] {
   const firstString = dynamicString.substring(0, indexOfDoubleParanStart);
 
   firstString && stringSegments.push(firstString);
-  let rest = dynamicString.substring(
-    indexOfDoubleParanStart,
-    dynamicString.length,
-  );
+  
   //{{}}{{}}}
   let sum = 0;
+  let segmentStart = indexOfDoubleParanStart;
 
-  for (let i = 0; i <= rest.length - 1; i++) {
-    const char = rest[i];
-    const prevChar = rest[i - 1];
+  for (let i = indexOfDoubleParanStart; i < dynamicString.length; i++) {
+    const char = dynamicString[i];
+    const prevChar = i > 0 ? dynamicString[i - 1] : "";
 
     if (char === "{") {
       sum++;
@@ -66,14 +64,24 @@ export function getDynamicStringSegments(dynamicString: string): string[] {
       sum--;
 
       if (prevChar === "}" && sum === 0) {
-        stringSegments.push(rest.substring(0, i + 1));
-        rest = rest.substring(i + 1, rest.length);
-
-        if (rest) {
-          stringSegments = stringSegments.concat(
-            getDynamicStringSegments(rest),
-          );
-          break;
+        stringSegments.push(dynamicString.substring(segmentStart, i + 1));
+        
+        // Check if there's more content after this segment
+        if (i + 1 < dynamicString.length) {
+          const nextSegmentStart = dynamicString.indexOf("{{", i + 1);
+          
+          if (nextSegmentStart === -1) {
+            // No more dynamic segments, push remaining as plain text
+            stringSegments.push(dynamicString.substring(i + 1));
+            break;
+          } else {
+            // Push plain text before next dynamic segment
+            if (nextSegmentStart > i + 1) {
+              stringSegments.push(dynamicString.substring(i + 1, nextSegmentStart));
+            }
+            segmentStart = nextSegmentStart;
+            i = nextSegmentStart - 1; // -1 because loop will increment
+          }
         }
       }
     }
@@ -327,13 +335,10 @@ export const isChildPropertyPathStartsWithParent = (
   }
 
   // Most common case: dot notation
-  if (childPropertyPath[parentLength] === ".") {
-    return childPropertyPath.startsWith(parentPropertyPath);
-  }
-
-  // Less common case: bracket notation
-  if (childPropertyPath[parentLength] === "[") {
-    return childPropertyPath.startsWith(parentPropertyPath);
+  const ch = childPropertyPath.charCodeAt(parentLength);
+  if (ch === 46 /* '.' */ || ch === 91 /* '[' */) {
+    // Use slice comparison to avoid extra allocations from startsWith in hot paths
+    return childPropertyPath.slice(0, parentLength) === parentPropertyPath;
   }
 
   return false;
@@ -683,8 +688,11 @@ export function getEntityName(
 export function getDifferences<T>(a: Set<T>, b: Set<T>): T[] {
   const diff: T[] = [];
 
+  // Cache the has method bound to `b` to avoid repeated property lookups.
+  const bHas = b.has.bind(b);
+
   for (const val of a) {
-    if (!b.has(val)) diff.push(val);
+    if (!bHas(val)) diff.push(val);
   }
 
   return diff;
