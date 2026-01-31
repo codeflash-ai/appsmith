@@ -17,15 +17,28 @@ export function getQueryParams() {
 // TODO: Fix this the next time the file is edited
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function convertObjectToQueryParams(object: any): string {
-  if (!_.isNil(object)) {
-    const paramArray: string[] = _.map(_.keys(object), (key) => {
-      return encodeURIComponent(key) + "=" + encodeURIComponent(object[key]);
-    });
-
-    return "?" + _.join(paramArray, "&");
-  } else {
+  if (object == null) {
     return "";
   }
+
+  const keys = Object.keys(object);
+  // Preserve original behavior: if object has no keys, return "?"
+  if (keys.length === 0) {
+    return "?";
+  }
+
+  const enc = encodeURIComponent;
+  let result = "?";
+
+  for (let i = 0, len = keys.length; i < len; i++) {
+    if (i !== 0) {
+      result += "&";
+    }
+    const key = keys[i];
+    result += enc(key) + "=" + enc(object[key]);
+  }
+
+  return result;
 }
 
 export function isValidURL(url: string): boolean {
