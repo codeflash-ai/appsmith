@@ -49,32 +49,35 @@ export function getDynamicStringSegments(dynamicString: string): string[] {
   const firstString = dynamicString.substring(0, indexOfDoubleParanStart);
 
   firstString && stringSegments.push(firstString);
-  let rest = dynamicString.substring(
-    indexOfDoubleParanStart,
-    dynamicString.length,
-  );
-  //{{}}{{}}}
+
+  // Start scanning from the first opening brace found
+  const s = dynamicString;
+  const len = s.length;
   let sum = 0;
+  const start = indexOfDoubleParanStart;
 
-  for (let i = 0; i <= rest.length - 1; i++) {
-    const char = rest[i];
-    const prevChar = rest[i - 1];
-
-    if (char === "{") {
+  //{{}}{{}}}
+  for (let i = start; i < len; i++) {
+    const ch = s.charCodeAt(i);
+    // '{' = 123, '}' = 125
+    if (ch === 123) {
       sum++;
-    } else if (char === "}") {
+    } else if (ch === 125) {
       sum--;
+      const prevCh = i > 0 ? s.charCodeAt(i - 1) : 0;
+      if (prevCh === 125 && sum === 0) {
+        // Found a balanced dynamic segment from start..i
+        stringSegments.push(s.substring(start, i + 1));
 
-      if (prevChar === "}" && sum === 0) {
-        stringSegments.push(rest.substring(0, i + 1));
-        rest = rest.substring(i + 1, rest.length);
-
-        if (rest) {
-          stringSegments = stringSegments.concat(
-            getDynamicStringSegments(rest),
+        const restStart = i + 1;
+        if (restStart < len) {
+          // Delegate processing of the remainder to preserve original behavior
+          return stringSegments.concat(
+            getDynamicStringSegments(s.substring(restStart)),
           );
-          break;
         }
+        // No remainder, return collected segments
+        return stringSegments;
       }
     }
   }
