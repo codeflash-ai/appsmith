@@ -19,6 +19,8 @@ export const createNavData = (general: {
   actionType?: string;
   widgetType?: string;
 }): NavigationData => {
+  const navigable = !!general.url;
+
   return {
     name: general.name,
     id: general.id,
@@ -27,7 +29,7 @@ export const createNavData = (general: {
     children: general.children,
     key: general.key,
     url: general.url,
-    navigable: !!general.url,
+    navigable,
     pluginName: general.pluginName,
     datasourceId: general.datasourceId,
     isMock: general.isMock,
