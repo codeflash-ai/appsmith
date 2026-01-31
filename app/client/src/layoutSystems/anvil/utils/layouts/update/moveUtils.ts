@@ -101,16 +101,18 @@ export function linkWidgetsToNewParent(
   highlight: AnvilHighlightInfo,
 ): CanvasWidgetsReduxState {
   const widgets: CanvasWidgetsReduxState = { ...allWidgets };
-  const { canvasId } = highlight;
+  const canvasId = highlight.canvasId;
 
-  movedWidgets.forEach((widgetId: string) => {
-    if (widgets[widgetId]) {
-      widgets[widgetId] = {
-        ...widgets[widgetId],
-        parentId: canvasId,
-      };
-    }
-  });
+  for (let i = 0, len = movedWidgets.length; i < len; i++) {
+    const widgetId = movedWidgets[i];
+    const widget = widgets[widgetId];
+    if (!widget) continue;
+    if (widget.parentId === canvasId) continue;
+    widgets[widgetId] = {
+      ...widget,
+      parentId: canvasId,
+    };
+  }
 
   return widgets;
 }
