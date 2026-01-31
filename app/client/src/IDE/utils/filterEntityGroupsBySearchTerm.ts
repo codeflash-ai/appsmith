@@ -30,14 +30,20 @@ export const filterEntityGroupsBySearchTerm = <
     return groups;
   }
 
-  return groups.reduce((result: Array<Group<G, T>>, group) => {
-    const { items, ...rest } = group;
-    const searchResults = new Fuse(items, FUSE_OPTIONS).search(searchTerm);
+  const result: Array<Group<G, T>> = [];
+  const len = groups.length;
+  for (let i = 0; i < len; i++) {
+    const group = groups[i];
+    // Create a Fuse instance for this group's items and perform the search
+    const searchResults = new Fuse(group.items, FUSE_OPTIONS).search(
+      searchTerm,
+    );
 
     if (searchResults.length) {
-      result.push({ ...rest, items: searchResults } as Group<G, T>);
+      // Preserve other group properties, replacing items with the search results
+      result.push({ ...group, items: searchResults } as Group<G, T>);
     }
+  }
 
-    return result;
-  }, []);
+  return result;
 };
