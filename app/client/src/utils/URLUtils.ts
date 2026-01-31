@@ -1,14 +1,17 @@
 import _ from "lodash";
+const URL_PATTERN = /\(?(?:(http|https|ftp|mailto|tel):\/\/)?(?:((?:[^\W\s]|\.|-|[:]{1})+)@{1})?((?:www.)?(?:[^\W\s]|\.|-)+[\.][^\W\s]{2,4}|localhost(?=\/)|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d*))?([\/]?[^\s\?]*[\/]{1})*(?:\/?([^\s\n\?\[\]\{\}\#]*(?:(?=\.)){1}|[^\s\n\?\[\]\{\}\.\#]*)?([\.]{1}[^\s\?\#]*)?)?(?:\?{1}([^\s\n\#\[\]]*))?([\#][^\s\n]*)?\)?/g;
+
 
 export function getQueryParams() {
   const urlParams = new URLSearchParams(window.location.search);
-  const keys = urlParams.keys();
-  let key = keys.next().value;
   const queryParams: Record<string, string> = {};
+  const hasOwn = Object.prototype.hasOwnProperty;
 
-  while (key) {
-    queryParams[key] = urlParams.get(key) as string;
-    key = keys.next().value;
+  for (const [key, value] of urlParams) {
+    // Only set the first occurrence of a key to preserve original get(key) semantics
+    if (!hasOwn.call(queryParams, key)) {
+      queryParams[key] = value;
+    }
   }
 
   return queryParams;
@@ -39,11 +42,10 @@ export function isValidURL(url: string): boolean {
 }
 
 export function matchesURLPattern(url: string) {
-  return (
-    url.match(
-      /\(?(?:(http|https|ftp|mailto|tel):\/\/)?(?:((?:[^\W\s]|\.|-|[:]{1})+)@{1})?((?:www.)?(?:[^\W\s]|\.|-)+[\.][^\W\s]{2,4}|localhost(?=\/)|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d*))?([\/]?[^\s\?]*[\/]{1})*(?:\/?([^\s\n\?\[\]\{\}\#]*(?:(?=\.)){1}|[^\s\n\?\[\]\{\}\.\#]*)?([\.]{1}[^\s\?\#]*)?)?(?:\?{1}([^\s\n\#\[\]]*))?([\#][^\s\n]*)?\)?/g,
-    ) !== null
-  );
+  // Reset lastIndex since we're using the /g flag with a shared regex
+  URL_PATTERN.lastIndex = 0;
+  // Use test() instead of match() to avoid allocating an array when we only need a boolean
+  return URL_PATTERN.test(url);
 }
 
 export const sanitizeString = (str: string): string => {
