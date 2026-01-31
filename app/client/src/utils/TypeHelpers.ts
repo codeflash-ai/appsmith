@@ -14,21 +14,21 @@ export enum Types {
 }
 
 export const getType = (value: unknown) => {
-  if (_.isString(value)) return Types.STRING;
+  if (typeof value === "string") return Types.STRING;
 
-  if (_.isNumber(value)) return Types.NUMBER;
+  if (typeof value === "number") return Types.NUMBER;
 
-  if (_.isBoolean(value)) return Types.BOOLEAN;
+  if (typeof value === "boolean") return Types.BOOLEAN;
 
   if (Array.isArray(value)) return Types.ARRAY;
 
-  if (_.isFunction(value)) return Types.FUNCTION;
+  if (typeof value === "function") return Types.FUNCTION;
 
-  if (_.isObject(value)) return Types.OBJECT;
+  if (typeof value === "object" && value !== null) return Types.OBJECT;
 
-  if (_.isUndefined(value)) return Types.UNDEFINED;
+  if (value === undefined) return Types.UNDEFINED;
 
-  if (_.isNull(value)) return Types.NULL;
+  if (value === null) return Types.NULL;
 
   return Types.UNKNOWN;
 };
