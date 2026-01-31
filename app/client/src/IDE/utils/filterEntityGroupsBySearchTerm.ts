@@ -30,14 +30,34 @@ export const filterEntityGroupsBySearchTerm = <
     return groups;
   }
 
-  return groups.reduce((result: Array<Group<G, T>>, group) => {
-    const { items, ...rest } = group;
-    const searchResults = new Fuse(items, FUSE_OPTIONS).search(searchTerm);
+  // Cache Fuse instances per items array to avoid reconstructing Fuse repeatedly
+  // when the same items array identity is passed in multiple calls.
+  // WeakMap keys are the items arrays themselves so they won't prevent GC.
+  const fuseCache: WeakMap<BaseItem[], Fuse<BaseItem>> =
+    (filterEntityGroupsBySearchTerm as unknown as { __fuseCache?: WeakMap<BaseItem[], Fuse<BaseItem>> }).__fuseCache ??
+    new WeakMap<BaseItem[], Fuse<BaseItem>>();
+  // store back on the function object so subsequent calls reuse the cache
+  (filterEntityGroupsBySearchTerm as unknown as { __fuseCache?: WeakMap<BaseItem[], Fuse<BaseItem>> }).__fuseCache =
+    fuseCache;
 
-    if (searchResults.length) {
-      result.push({ ...rest, items: searchResults } as Group<G, T>);
+  const result: Array<Group<G, T>> = [];
+  for (let i = 0, len = groups.length; i < len; i++) {
+    const group = groups[i];
+    const items = group.items as BaseItem[];
+
+    let fuse = fuseCache.get(items);
+    if (!fuse) {
+      fuse = new Fuse(items, FUSE_OPTIONS);
+      fuseCache.set(items, fuse);
     }
 
-    return result;
-  }, []);
+    const searchResults = fuse.search(searchTerm) as unknown as T[];
+
+    if (searchResults.length) {
+      // Create a shallow copy of the group with the filtered items to avoid mutating input
+      result.push(Object.assign({}, group, { items: searchResults }) as Group<G, T>);
+    }
+  }
+
+  return result;
 };
