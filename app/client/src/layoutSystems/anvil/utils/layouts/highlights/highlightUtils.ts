@@ -188,11 +188,11 @@ export function getNonDraggedWidgets(
   layout: WidgetLayoutProps[],
   draggedWidgets: DraggedWidget[],
 ): WidgetLayoutProps[] {
-  const draggedWidgetIds: string[] = draggedWidgets.map(
-    (each: DraggedWidget) => each.widgetId,
+  const draggedWidgetIds = new Set(
+    draggedWidgets.map((each: DraggedWidget) => each.widgetId),
   );
 
   return layout.filter(
-    (each: WidgetLayoutProps) => !draggedWidgetIds.includes(each.widgetId),
+    (each: WidgetLayoutProps) => !draggedWidgetIds.has(each.widgetId),
   );
 }
