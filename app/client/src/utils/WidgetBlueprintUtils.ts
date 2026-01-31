@@ -15,13 +15,16 @@ export function getWidgetBluePrintUpdates(widgetUpdates: {
 
   const updates: UpdatePropertyArgs[] = [];
 
-  for (const widgetId of widgetIds) {
+  // Use index-based loops and cache lengths to reduce iterator/allocation overhead
+  for (let i = 0, idsLen = widgetIds.length; i < idsLen; i++) {
+    const widgetId = widgetIds[i];
     const updateProps = widgetUpdates[widgetId];
 
     if (updateProps) {
       const propertyNames = Object.keys(updateProps);
 
-      for (const propertyName of propertyNames) {
+      for (let j = 0, propLen = propertyNames.length; j < propLen; j++) {
+        const propertyName = propertyNames[j];
         updates.push({
           widgetId: widgetId,
           propertyName: propertyName,
